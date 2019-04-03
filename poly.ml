@@ -49,10 +49,37 @@ let compare (e1: pExp) (e2: pExp) : bool =
   Hint 1: Print () around elements that are not Term() 
   Hint 2: Recurse on the elements of Plus[..] or Times[..]
 *)
-let print_pExp (_e: pExp): unit =
-  (* TODO *)
-  Printf.printf("Not implemented");
-  print_newline()
+let rec print_pExp (_e: pExp): unit =
+  match _e with
+  | _ -> print_newline()
+  | Term(n,m) -> (
+    print_int n;
+    if m >= 1 then (
+      print_string "x";
+      if m >= 2 then Printf.printf "^%i" m
+    )
+  )
+  | Plus(pList) -> (
+    match pList with
+    | [] -> print_newline()
+    | hd::tail ->  (
+      Printf.printf "("; print_pExp ( hd );
+      Printf.printf ") + (";
+      let newPlus:pExp = Plus(tail) in
+       print_pExp ( newPlus )
+    )
+  )
+  | Times(pList) -> (
+    match pList with
+    | [] -> print_newline()
+    | hd::tail ->  (
+      Printf.printf "("; print_pExp ( hd );
+      Printf.printf ") * (";
+      let newTimes:pExp = Times(tail) in
+       print_pExp ( newTimes )
+    )
+  )
+  
 
 (* 
   Function to simplify (one pass) pExpr
