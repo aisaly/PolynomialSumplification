@@ -79,7 +79,7 @@ let rec print_pExp (_e: pExp): unit =
        print_pExp ( newTimes )
     )
   )
-  
+
 
 (*
   Function to simplify (one pass) pExpr
@@ -106,7 +106,15 @@ let simplify1 (e:pExp): pExp =
   Make sure this code works before you work on simplify1
 *)
 let equal_pExp (_e1: pExp) (_e2: pExp) :bool =
-  true
+  match _e1, _e2 with
+  | Term(n1,m1), Term(n2, m2) -> (
+		if n1 = n2 && m1 = m2 then
+	  		true
+  		 else
+			false
+
+  )
+  | _ -> raise (Failure "not what I expected")
 
 (* Fixed point version of simplify1
   i.e. Apply simplify1 until no
