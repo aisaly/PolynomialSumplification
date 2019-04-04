@@ -14,11 +14,6 @@ type pExp =
   *)
   | Times of pExp list (* List of terms multiplied *)
 
-let getDegree (_e:pExp): int =
-  match _e with
-  | Term(n,m) -> m
-  | _ -> 0
-
 (*
   Function to traslate betwen AST expressions
   to pExp expressions
@@ -31,23 +26,26 @@ let from_expr (_e: Expr.expr) : pExp =
 *)
 let rec maxDegree (pList: pExp list) (relMax: int): int =
   match pList with
-  | hd::tail -> (
-    let m = getDegree hd in
+  | [] -> relMax
+  | hd::tail ->
+    match hd with
+    | Term(n,m) ->
       if m > relMax then maxDegree tail m
       else maxDegree tail relMax
-  )
-  | [] -> relMax
+    | Plus(ps) -> maxDegree tail ( maxDegree ps relMax )
+    | Times(ps) -> maxDegree tail ( sumDegrees ps relMax )
 
 (*
   Returns the sum of degrees from a list of pExp expressions
 *)
-let rec sumDegrees (pList: pExp list) (sum: int): int =
+and sumDegrees (pList: pExp list) (sum: int): int =
   match pList with
-  | hd::tail -> (
-    let m = getDegree hd in
-      sumDegrees tail (m + sum)
-  )
   | [] -> sum
+  | hd::tail -> 
+    match hd with
+    | Term(n,m) -> sumDegrees tail (m + sum)
+    | Plus(ps) -> sumDegrees tail ( maxDegree ps sum )
+    | Times(ps) -> sumDegrees tail ( sumDegrees ps sum )
 
 (*
   Compute degree of a polynomial expression.
@@ -126,9 +124,21 @@ let rec print_pExp (_e: pExp): unit =
       => Plus[Times[Term(1,1); Term(3,3)]; Times[Term(2,2); Term(3,3)]]
       => Plus[Term(2,3); Term(6,5)]
   Hint 6: Find other situations that can arise
+  TODO: implement
 *)
 let simplify1 (e:pExp): pExp =
-    e
+    match e with
+    | Term(n,m) -> e
+    | Plus(pList) -> (
+      match pList with
+      | [] -> raise (Failure "Plus: did not receive enough arguments")
+      | x::y::tail -> e
+    )
+    | Times(pList) -> (
+      match pList with
+      | [] -> raise (Failure "Times: did not receive enough arguments")
+      | x::y::tail -> e
+    )
 
 (*
   Compute if two pExp are the same
