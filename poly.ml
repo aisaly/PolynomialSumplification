@@ -14,6 +14,10 @@ type pExp =
   *)
   | Times of pExp list (* List of terms multiplied *)
 
+let getDegree (_e:pExp): int =
+  match _e with
+  | Term(n,m) -> m
+  | _ -> 0
 
 (*
   Function to traslate betwen AST expressions
@@ -23,13 +27,40 @@ let from_expr (_e: Expr.expr) : pExp =
     Term(0,0) (* TODO *)
 
 (*
+  Returns the max degree from a list of pExp expressions
+*)
+let rec maxDegree (pList: pExp list) (relMax: int): int =
+  match pList with
+  | hd::tail -> (
+    let m = getDegree hd in
+      if m > relMax then maxDegree tail m
+      else maxDegree tail relMax
+  )
+  | [] -> relMax
+
+(*
+  Returns the sum of degrees from a list of pExp expressions
+*)
+let rec sumDegrees (pList: pExp list) (sum: int): int =
+  match pList with
+  | hd::tail -> (
+    let m = getDegree hd in
+      sumDegrees tail (m + sum)
+  )
+  | [] -> sum
+
+(*
   Compute degree of a polynomial expression.
 
   Hint 1: Degree of Term(n,m) is m
   Hint 2: Degree of Plus[...] is the max of the degree of args
   Hint 3: Degree of Times[...] is the sum of the degree of args
 *)
-let degree (_e:pExp): int = 0 (* TODO *)
+let degree (_e:pExp): int =
+  match _e with
+  | Term(n,m) -> m
+  | Plus(pList) -> maxDegree pList 0
+  | Times(pList) -> sumDegrees pList 0
 
 (*
   Comparison function useful for sorting of Plus[..] args
@@ -51,7 +82,6 @@ let compare (e1: pExp) (e2: pExp) : bool =
 *)
 let rec print_pExp (_e: pExp): unit =
   match _e with
-  | _ -> print_newline()
   | Term(n,m) -> (
     print_int n;
     if m >= 1 then (
@@ -78,8 +108,7 @@ let rec print_pExp (_e: pExp): unit =
       let newTimes:pExp = Times(tail) in
        print_pExp ( newTimes )
     )
-  )
-  
+  )  
 
 (*
   Function to simplify (one pass) pExpr
