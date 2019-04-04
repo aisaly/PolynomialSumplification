@@ -1,4 +1,4 @@
-type expr = 
+type expr =
   | Num of int
   | Var of char
   | Add of expr*expr
@@ -8,27 +8,27 @@ type expr =
   | Pos of expr
   | Neg of expr
 
-let rec 
-  print_op1 c e = 
+let rec
+  print_op1 c e =
     Printf.printf "%s(" c;
     print_expr_r e;
     Printf.printf ")"
 and
-  print_op2 c e1 e2 = 
+  print_op2 c e1 e2 =
     Printf.printf "(";
     print_expr_r e1;
     Printf.printf "%s" c;
     print_expr_r e2;
     Printf.printf ")"
-and 
-  print_expr_r (e:expr): unit = 
+and
+  print_expr_r (e:expr): unit =
     match e with
       | Num(i) -> Printf.printf "%d" i
       | Var(c) -> Printf.printf "%c" c
       | Add(e1,e2) -> print_op2 "+" e1 e2
       | Sub(e1,e2) -> print_op2 "-" e1 e2
       | Mul(e1,e2) -> print_op2 "*" e1 e2
-      | Pow(e,i) -> 
+      | Pow(e,i) ->
         Printf.printf "(";
         print_expr_r e;
         Printf.printf ")^%d" i;
@@ -38,7 +38,7 @@ and
 (*
   Print expression and pass it through
 *)
-let print_expr (e:expr) :expr = 
+let print_expr (e:expr) :expr =
   print_expr_r e;
   print_newline ();
   e
