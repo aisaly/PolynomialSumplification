@@ -6,7 +6,7 @@ open Expr
 
 let filename = Sys.argv.(1)
 
-let () = 
+let () =
   open_in filename |>
   Lexing.from_channel |>
   Parser.main Lexer.token |>

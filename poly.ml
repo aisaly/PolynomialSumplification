@@ -94,7 +94,7 @@ let compare (e1: pExp) (e2: pExp) : bool =
 let rec print_pExp (_e: pExp): unit =
   match _e with
   | Term(n,m) -> (
-    print_int n;
+    Printf.printf "Term:"; print_int n;
     if m > 0 then (
       print_string "x";
       if m >= 2 then Printf.printf "^%i" m
@@ -103,7 +103,7 @@ let rec print_pExp (_e: pExp): unit =
   | Plus(pList) -> (
     match pList with
     | hd::tail ->  (
-      Printf.printf "("; print_pExp hd; Printf.printf " + ";
+      Printf.printf "Plus("; print_pExp hd; Printf.printf " + ";
       print_pExp (List.hd tail); Printf.printf ")"
     )
     | [] -> ()
@@ -111,7 +111,7 @@ let rec print_pExp (_e: pExp): unit =
   | Times(pList) -> (
     match pList with
     | hd::tail ->  (
-      Printf.printf "("; print_pExp hd; Printf.printf " * ";
+      Printf.printf "Times("; print_pExp hd; Printf.printf " * ";
       print_pExp (List.hd tail); Printf.printf ")"
     )
     | [] -> ()
@@ -150,8 +150,8 @@ let rec simplify1 (e:pExp): pExp =
       | [] -> raise (Failure "Plus: did not receive enough arguments")
       | x::[] -> simplify1 x
       | x::y::p -> (
-        let x, y = simplify1 x, simplify1 y in
-        match x, y with
+		let u, v = simplify1 x, simplify1 y in
+	    match u, v with
         | Plus(p2), _ -> (*flatten*) let f el = simplify1 el in Plus(List.map f p2)
         | _, Plus(p2) -> (*flatten*) let f el = simplify1 el in Plus(List.map f p2)
         | Term(n1, m1), Term(n2, m2) -> (
@@ -168,15 +168,15 @@ let rec simplify1 (e:pExp): pExp =
       | [] -> raise (Failure "Times: did not receive enough arguments")
       | x::[] -> simplify1 x
       | x::y::p -> (
-        let x, y = simplify1 x, simplify1 y in
-        match x, y with
-        | Times(p2), _ -> (*flatten*) let f el = simplify1 el in Times(List.map f p2)
-        | _, Times(p2) -> (*flatten*) let f el = simplify1 el in Times(List.map f p2)
+        let u, v = simplify1 x, simplify1 y in
+        match u, v with
+        | Times(p2), _ -> (*flatten*) let f el = simplify1 el in simplify1 (Times(List.map f p2))
+        | _, Times(p2) -> (*flatten*) let f el = simplify1 el in simplify1 (Times(List.map f p2))
         | Term(n1, m1), Term(n2, m2) -> (
           let prod = Term(n1*n2, m1+m2) in
             if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
             else if n2 = 0 then Term(n1, m1)
-            else Times(prod::p)
+            else (print_pExp prod; prod)
         )
         | Plus(p2), _ -> (*distribute*) let f el = Times([el;e]) in Plus(List.map f p2)
         | _, Plus(p2) -> (*distribute*) let f el = Times([el;e]) in Plus(List.map f p2)
@@ -209,6 +209,7 @@ let equal_pExp (_e1: pExp) (_e2: pExp): bool =
 *)
 let rec simplify (e:pExp): pExp =
     let rE = simplify1(e) in
+	print_endline ""; print_pExp rE; print_endline "";
       if (equal_pExp e rE) then
         e
       else
