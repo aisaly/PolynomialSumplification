@@ -142,6 +142,7 @@ let rec simplify1 (e:pExp): pExp =
       | [] -> raise (Failure "Plus: did not receive enough arguments")
       | x::[] -> simplify1 x
       | x::y::p ->
+        let x, y = simplify1 x, simplify1 y in
         match x, y with
         | Plus(p2), _ -> (*flatten*) Plus((y::p2)@p)
         | Term(n1, m1), Term(n2, m2) -> (
