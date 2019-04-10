@@ -164,8 +164,9 @@ let simplify1 (e:pExp): pExp =
 let equal_pExp (_e1: pExp) (_e2: pExp): bool =
   match _e1, _e2 with
   | Term(n1,m1), Term(n2, m2) -> (
-                                if n1 = n2 && m1 = m2 then true
-                else false
+		if n1 = n2 && m1 = m2 then true
+  	else false
+
   )
   | Plus(l1), Plus(l2) -> (
     if l1 = l2 then true (*should work because lists are sorted in simplify*)
