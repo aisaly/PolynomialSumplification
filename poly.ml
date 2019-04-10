@@ -133,14 +133,14 @@ let rec print_pExp (_e: pExp): unit =
   Hint 6: Find other situations that can arise
   TODO: implement
 *)
-let simplify1 (e:pExp): pExp =
+let rec simplify1 (e:pExp): pExp =
     match e with
     | Term(n,m) -> e
     | Plus(pList) -> (
       let pp = (List.stable_sort compareDegree pList) in
       match pp with
       | [] -> raise (Failure "Plus: did not receive enough arguments")
-      | x::[] -> x
+      | x::[] -> simplify1 x
       | x::y::p ->
         match x, y with
         | Plus(p2), _ -> (*flatten*) Plus((y::p2)@p)
@@ -150,12 +150,14 @@ let simplify1 (e:pExp): pExp =
           else if n2 = 0 then Term(n1, m1)
           else e (*can not simplify*)
         )
+        | _ -> e
     )
     | Times(pList) -> (
       match pList with
       | [] -> raise (Failure "Times: did not receive enough arguments")
-      | x::[] -> x
+      | x::[] -> simplify1 x
       | x::y::p -> (
+        let x, y = simplify1 x, simplify1 y in
         match x, y with
         | Times(p2), _ -> (*flatten*) Times((y::p2)@p)
         | Term(n1, m1), Term(n2, m2) -> (
@@ -164,6 +166,7 @@ let simplify1 (e:pExp): pExp =
             else if n2 = 0 then Term(n1, m1)
             else prod
         )
+        | _ -> e
       )
     )
 
@@ -193,7 +196,6 @@ let equal_pExp (_e1: pExp) (_e2: pExp): bool =
 *)
 let rec simplify (e:pExp): pExp =
     let rE = simplify1(e) in
-      
       if (equal_pExp e rE) then
         e
       else
