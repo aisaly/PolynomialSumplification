@@ -102,8 +102,8 @@ let rec print_pExp (_e: pExp): unit =
     match pList with
     | [] -> print_newline()
     | hd::tail ->  (
-      Printf.printf "("; print_pExp ( hd );
-      Printf.printf ") + (";
+      Printf.printf " + ("; print_pExp ( hd );
+      Printf.printf ")";
       let newPlus:pExp = Plus(tail) in
        print_pExp ( newPlus )
     )
@@ -112,10 +112,8 @@ let rec print_pExp (_e: pExp): unit =
     match pList with
     | [] -> print_newline()
     | hd::tail ->  (
-      Printf.printf "("; print_pExp ( hd );
-      Printf.printf ") * (";
-      let newTimes:pExp = Times(tail) in
-       print_pExp ( newTimes )
+      Printf.printf "("; print_pExp hd;
+      Printf.printf ") * ("; print_pExp Times(tail)
     )
   )
 
@@ -166,11 +164,10 @@ let equal_pExp (_e1: pExp) (_e2: pExp): bool =
   | Term(n1,m1), Term(n2, m2) -> (
 		if n1 = n2 && m1 = m2 then true
   	else false
-
   )
   | Plus(l1), Plus(l2) -> (
     if l1 = l2 then true (*should work because lists are sorted in simplify*)
-    else false
+    else false  
   )
   | Times(l1), Times(l2) -> (
     if l1 = l2 then true
