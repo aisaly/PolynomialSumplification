@@ -49,7 +49,7 @@ let rec maxDegree (pList: pExp list) (relMax: int): int =
 and sumDegrees (pList: pExp list) (sum: int): int =
   match pList with
   | [] -> sum
-  | hd::tail -> 
+  | hd::tail ->
     match hd with
     | Term(n,m) -> sumDegrees tail (m + sum)
     | Plus(ps) -> sumDegrees tail ( maxDegree ps sum )
