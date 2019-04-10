@@ -15,11 +15,19 @@ type pExp =
   | Times of pExp list (* List of terms multiplied *)
 
 (*
-  Function to traslate betwen AST expressions
+  Function to translate betwen AST expressions
   to pExp expressions
 *)
-let from_expr (_e: Expr.expr) : pExp =
-    Term(0,0) (* TODO *)
+let rec from_expr (_e: Expr.expr) : pExp =
+    match _e with
+      | Num(i) -> Term(i, 0)
+      | Var(c) -> Term(1, 0)
+      | Add(e1,e2) -> Plus([from_expr e1; from_expr e2])
+      | Sub(e1,e2) -> Plus([from_expr e1; from_expr (Neg(e2))])
+      | Mul(e1,e2) -> Times([from_expr e1; from_expr e2])
+      | Pow(e,i) -> Times( (Array.make i (from_expr e) |> Array.to_list) )
+      | Pos(e) -> from_expr e
+      | Neg(e) -> Times([Term(-1,0); from_expr e])
 
 (*
   Returns the max degree from a list of pExp expressions
@@ -59,6 +67,9 @@ let degree (_e:pExp): int =
   | Term(n,m) -> m
   | Plus(pList) -> maxDegree pList 0
   | Times(pList) -> sumDegrees pList 0
+
+let compareDegree (e1:pExp) (e2:pExp): int =
+  degree e2 - degree e1
 
 (*
   Comparison function useful for sorting of Plus[..] args
@@ -130,28 +141,42 @@ let simplify1 (e:pExp): pExp =
     match e with
     | Term(n,m) -> e
     | Plus(pList) -> (
-      match pList with
+      let pp = (List.stable_sort compareDegree pList) in
+      match pp with
       | [] -> raise (Failure "Plus: did not receive enough arguments")
-      | x::y::tail -> e
+      | x::[] -> x
+      | x::p ->
+        match x with
+        | Plus(p2) -> (*flatten*) Plus(p2@p)
+        | _ -> e
     )
     | Times(pList) -> (
       match pList with
       | [] -> raise (Failure "Times: did not receive enough arguments")
-      | x::y::tail -> e
+      | x::[] -> x
+      | x::p -> e
     )
 
 (*
   Compute if two pExp are the same
   Make sure this code works before you work on simplify1
 *)
-let equal_pExp (_e1: pExp) (_e2: pExp) :bool =
+let equal_pExp (_e1: pExp) (_e2: pExp): bool =
   match _e1, _e2 with
   | Term(n1,m1), Term(n2, m2) -> (
 		if n1 = n2 && m1 = m2 then true
   	else false
 
   )
-  | _ -> raise (Failure "not what I expected")
+  | Plus(l1), Plus(l2) -> (
+    if l1 = l2 then true (*should work because lists are sorted in simplify*)
+    else false
+  )
+  | Times(l1), Times(l2) -> (
+    if l1 = l2 then true
+    else false
+  )
+  | _ -> false
 
 (* Fixed point version of simplify1
   i.e. Apply simplify1 until no
