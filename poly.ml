@@ -143,7 +143,7 @@ let simplify1 (e:pExp): pExp =
       | x::[] -> x
       | x::y::p ->
         match x, y with
-        | Plus(p2), _ -> (*flatten*) Plus((p2@y)@p)
+        | Plus(p2), _ -> (*flatten*) Plus((y::p2)@p)
         | Term(n1, m1), Term(n2, m2) -> (
           if m1 = m2 then Term(n1+n2, m1) (*add terms of like degree*)
           else if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
@@ -157,12 +157,13 @@ let simplify1 (e:pExp): pExp =
       | x::[] -> x
       | x::y::p -> (
         match x, y with
-        | Times(p2), _ -> (*flatten*) Times((p2@y)@p)
+        | Times(p2), _ -> (*flatten*) Times((y::p2)@p)
         | Term(n1, m1), Term(n2, m2) -> (
           let prod = Term(n1*n2, m1+m2) in
             if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
             else if n2 = 0 then Term(n1, m1)
             else prod
+        )
       )
     )
 
