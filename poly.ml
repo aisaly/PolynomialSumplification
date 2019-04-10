@@ -146,9 +146,9 @@ let rec simplify1 (e:pExp): pExp =
       let pp = (List.stable_sort compareDegree pList) in
       match pp with
       | [] -> raise (Failure "Plus: did not receive enough arguments")
-      | x::[] -> simplify1 x
-      | x::y::p ->
-        let x, y = simplify1 x, simplify1 y in
+      | x::[] -> simplify x
+      | x::y::p -> (
+        let x, y = simplify x, simplify y in
         match x, y with
         | Plus(p2), _ -> (*flatten*) let f el = Plus([el;e]) in Plus(List.map f p2)
         | _, Plus(p2) -> (*flatten*) let f el = Plus([el;e]) in Plus(List.map f p2)
@@ -163,9 +163,9 @@ let rec simplify1 (e:pExp): pExp =
     | Times(pList) -> (
       match pList with
       | [] -> raise (Failure "Times: did not receive enough arguments")
-      | x::[] -> simplify1 x
+      | x::[] -> simplify x
       | x::y::p -> (
-        let x, y = simplify1 x, simplify1 y in
+        let x, y = simplify x, simplify y in
         match x, y with
         | Times(p2), _ -> (*flatten*) let f el = Times([el;e]) in Times(List.map f p2)
         | _, Times(p2) -> (*flatten*) let f el = Times([el;e]) in Times(List.map f p2)
@@ -173,7 +173,7 @@ let rec simplify1 (e:pExp): pExp =
           let prod = Term(n1*n2, m1+m2) in
             if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
             else if n2 = 0 then Term(n1, m1)
-            else prod
+            else Times(prod::p)
         )
         | Plus(p2), _ -> (*distribute*) let f el = Times([el;e]) in Plus(List.map f p2)
         | _, Plus(p2) -> (*distribute*) let f el = Times([el;e]) in Plus(List.map f p2)
