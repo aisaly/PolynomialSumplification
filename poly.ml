@@ -21,7 +21,7 @@ type pExp =
 let rec from_expr (_e: Expr.expr) : pExp =
     match _e with
       | Num(i) -> Term(i, 0)
-      | Var(c) -> Term(1, 0)
+      | Var(c) -> Term(1, 1)
       | Add(e1,e2) -> Plus([from_expr e1; from_expr e2])
       | Sub(e1,e2) -> Plus([from_expr e1; from_expr (Neg(e2))])
       | Mul(e1,e2) -> Times([from_expr e1; from_expr e2])
@@ -102,7 +102,7 @@ let rec print_pExp (_e: pExp): unit =
     match pList with
     | hd::tail ->  (
       Printf.printf "("; print_pExp hd; Printf.printf " + ";
-      print_pExp (Plus(tail)); Printf.printf ")"
+      print_pExp (List.hd tail); Printf.printf ")"
     )
     | [] -> ()
   )
@@ -110,7 +110,7 @@ let rec print_pExp (_e: pExp): unit =
     match pList with
     | hd::tail ->  (
       Printf.printf "("; print_pExp hd; Printf.printf " * ";
-      print_pExp (Times(tail)); Printf.printf ")"
+      print_pExp (List.hd tail); Printf.printf ")"
     )
     | [] -> ()
   )
@@ -178,7 +178,7 @@ let equal_pExp (_e1: pExp) (_e2: pExp): bool =
   )
   | Plus(l1), Plus(l2) -> (
     if l1 = l2 then true (*should work because lists are sorted in simplify*)
-    else false  
+    else false
   )
   | Times(l1), Times(l2) -> (
     if l1 = l2 then true
@@ -192,7 +192,7 @@ let equal_pExp (_e1: pExp) (_e2: pExp): bool =
 *)
 let rec simplify (e:pExp): pExp =
     let rE = simplify1(e) in
-      print_pExp rE;
+      
       if (equal_pExp e rE) then
         e
       else
