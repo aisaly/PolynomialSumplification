@@ -93,7 +93,7 @@ let rec print_pExp (_e: pExp): unit =
   match _e with
   | Term(n,m) -> (
     print_int n;
-    if m >= 1 then (
+    if m > 0 then (
       print_string "x";
       if m >= 2 then Printf.printf "^%i" m
     )
@@ -141,16 +141,29 @@ let simplify1 (e:pExp): pExp =
       match pp with
       | [] -> raise (Failure "Plus: did not receive enough arguments")
       | x::[] -> x
-      | x::p ->
-        match x with
-        | Plus(p2) -> (*flatten*) Plus(p2@p)
-        | _ -> e
+      | x::y::p ->
+        match x, y with
+        | Plus(p2), _ -> (*flatten*) Plus((p2@y)@p)
+        | Term(n1, m1), Term(n2, m2) -> (
+          if m1 = m2 then Term(n1+n2, m1) (*add terms of like degree*)
+          else if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
+          else if n2 = 0 then Term(n1, m1)
+          else e (*can not simplify*)
+        )
     )
     | Times(pList) -> (
       match pList with
       | [] -> raise (Failure "Times: did not receive enough arguments")
       | x::[] -> x
-      | x::p -> e
+      | x::y::p -> (
+        match x, y with
+        | Times(p2), _ -> (*flatten*) Times((p2@y)@p)
+        | Term(n1, m1), Term(n2, m2) -> (
+          let prod = Term(n1*n2, m1+m2) in
+            if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
+            else if n2 = 0 then Term(n1, m1)
+            else prod
+      )
     )
 
 (*
