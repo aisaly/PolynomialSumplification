@@ -102,10 +102,8 @@ let rec print_pExp (_e: pExp): unit =
     match pList with
     | [] -> print_newline()
     | hd::tail ->  (
-      Printf.printf " + ("; print_pExp ( hd );
-      Printf.printf ")";
-      let newPlus:pExp = Plus(tail) in
-       print_pExp ( newPlus )
+      Printf.printf " + ("; print_pExp hd;
+      Printf.printf ")"; print_pExp (Times(tail))
     )
   )
   | Times(pList) -> (
@@ -113,7 +111,7 @@ let rec print_pExp (_e: pExp): unit =
     | [] -> print_newline()
     | hd::tail ->  (
       Printf.printf "("; print_pExp hd;
-      Printf.printf ") * ("; print_pExp Times(tail)
+      Printf.printf ") * ("; print_pExp (Times(tail))
     )
   )
 
