@@ -159,6 +159,7 @@ let rec simplify1 (e:pExp): pExp =
           else e (*can not simplify*)
         )
         | _ -> e
+      )
     )
     | Times(pList) -> (
       match pList with
