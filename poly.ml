@@ -104,7 +104,7 @@ let rec print_pExp (_e: pExp): unit =
     match pList with
     | hd::tail ->  (
       Printf.printf "Plus("; print_pExp hd; Printf.printf " + ";
-      print_pExp (List.hd tail); Printf.printf ")"
+      print_pExp_list_plus tail; Printf.printf ")"
     )
     | [] -> ()
   )
@@ -112,10 +112,23 @@ let rec print_pExp (_e: pExp): unit =
     match pList with
     | hd::tail ->  (
       Printf.printf "Times("; print_pExp hd; Printf.printf " * ";
-      print_pExp (List.hd tail); Printf.printf ")"
+      print_pExp_list_times tail; Printf.printf ")"
     )
     | [] -> ()
   )
+
+and print_pExp_list_plus (ps:pExp list): unit =
+ match ps with
+	 | [] -> ()
+	 | hd::[] -> print_pExp hd;
+	 | hd::tail -> print_pExp hd; Printf.printf " + "; print_pExp_list_plus tail
+
+and print_pExp_list_times (ps:pExp list): unit =
+ 	match ps with
+	| [] -> ()
+	| hd::[] -> print_pExp hd;
+	| hd::tail -> print_pExp hd; Printf.printf " * "; print_pExp_list_times tail
+
 
 let distribute (p:pExp) (elem:pExp): pExp =
   Times([p; elem])
@@ -148,20 +161,7 @@ let rec simplify1 (e:pExp): pExp =
       let pp = (List.stable_sort compareDegree pList) in
       match pp with
       | [] -> raise (Failure "Plus: did not receive enough arguments")
-      | x::[] -> simplify1 x
-      | x::y::p -> (
-		let u, v = simplify1 x, simplify1 y in
-	    match u, v with
-        | Plus(p2), _ -> (*flatten*) let f el = simplify1 el in Plus(List.map f p2)
-        | _, Plus(p2) -> (*flatten*) let f el = simplify1 el in Plus(List.map f p2)
-        | Term(n1, m1), Term(n2, m2) -> (
-          if m1 = m2 then Term(n1+n2, m1) (*add terms of like degree*)
-          else if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
-          else if n2 = 0 then Term(n1, m1)
-          else e (*can not simplify*)
-        )
-        | _ -> e
-      )
+      | l -> Plus(simplifyPlusList l [])
     )
     | Times(pList) -> (
       match pList with
@@ -170,8 +170,8 @@ let rec simplify1 (e:pExp): pExp =
       | x::y::p -> (
         let u, v = simplify1 x, simplify1 y in
         match u, v with
-        | Times(p2), _ -> (*flatten*) let f el = simplify1 el in simplify1 (Times(List.map f p2))
-        | _, Times(p2) -> (*flatten*) let f el = simplify1 el in simplify1 (Times(List.map f p2))
+        | Times(p2), _ -> (*flatten*) Printf.printf "flat1"; let f el = simplify1 el in simplify1 (Times(List.map f p2))
+        | _, Times(p2) -> (*flatten*) Printf.printf "flat2"; let f el = simplify1 el in simplify1 (Times(List.map f p2))
         | Term(n1, m1), Term(n2, m2) -> (
           let prod = Term(n1*n2, m1+m2) in
             if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
@@ -183,6 +183,24 @@ let rec simplify1 (e:pExp): pExp =
       )
     )
 
+	and simplifyPlusList (l:pExp list) (l2:pExp list): pExp list =
+		match l with
+		| [] -> l2
+		| x::[] -> [simplify1 x]
+		| x::y::tail -> (
+			let u, v = simplify1 x, simplify1 y in
+			match u, v with
+			| Plus(p2), _ -> simplifyPlusList p2 [u;v]@l2
+			| _, Plus(p2) -> simplifyPlusList p2 [u;v]@l2
+			| Term(n1, m1), Term(n2, m2) -> (
+			  if m1 = m2 then [Term(n1+n2, m1)]@l2 (*add terms of like degree*)
+			  else if n1 = 0 && n2 = 0 then l2 (*remove 0 terms*)
+			  else if n1 = 0 then [Term(n2, m2)]@l2
+			  else if n2 = 0 then [Term(n2, m2)]@l2
+			)
+			| _,_ -> [u;v]@tail
+		)
+
 (*
   Compute if two pExp are the same
   Make sure this code works before you work on simplify1
@@ -190,18 +208,18 @@ let rec simplify1 (e:pExp): pExp =
 let equal_pExp (_e1: pExp) (_e2: pExp): bool =
   match _e1, _e2 with
   | Term(n1,m1), Term(n2, m2) -> (
-		if n1 = n2 && m1 = m2 then true
+	if (n1 = n2 && m1 = m2) then true
   	else false
   )
   | Plus(l1), Plus(l2) -> (
-    if l1 = l2 then true (*should work because lists are sorted in simplify*)
-    else false
+    if l1 = l2 then true
+  	else false
   )
   | Times(l1), Times(l2) -> (
-    if l1 = l2 then true
-    else false
+    if l1 = l2 then (Printf.printf "tines equal"; true)
+  	else (Printf.printf "times not equal"; false)
   )
-  | _ -> false
+  | _ -> Printf.printf "not equal types"; false
 
 (* Fixed point version of simplify1
   i.e. Apply simplify1 until no
@@ -209,8 +227,8 @@ let equal_pExp (_e1: pExp) (_e2: pExp): bool =
 *)
 let rec simplify (e:pExp): pExp =
     let rE = simplify1(e) in
-	print_endline ""; print_pExp rE; print_endline "";
+	print_endline ""; print_pExp e; print_endline "";
       if (equal_pExp e rE) then
-        e
+        (e)
       else
-        simplify(rE)
+        (simplify(rE))
