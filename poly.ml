@@ -197,8 +197,9 @@ let rec simplify1 (e:pExp): pExp =
 			  else if n1 = 0 && n2 = 0 then l2 (*remove 0 terms*)
 			  else if n1 = 0 then [Term(n2, m2)]@l2
 			  else if n2 = 0 then [Term(n2, m2)]@l2
-			)
+			  )
 			| _,_ -> [u;v]@tail
+
 		)
 
 (*
