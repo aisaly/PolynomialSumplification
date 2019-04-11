@@ -165,14 +165,14 @@ let rec simplify1 (e:pExp): pExp =
       | x::y::tail -> (
         let u, v = simplify1 x, simplify1 y in
         match u, v with
-        | Plus(p2), _ -> (*flatten*) let f el = simplify1 el in Plus(List.map f p2)
-        | _, Plus(p2) -> (*flatten*) let f el = simplify1 el in Plus(List.map f p2)
+        | Plus(p2), _ -> (*flatten*) Plus((List.map simplify1 p2))
+        | _, Plus(p2) -> (*flatten*) Plus((List.map simplify1 p2))
         | Term(n1, m1), Term(n2, m2) -> (
           if m1 = m2 then Term(n1+n2, m1) (*add terms of like degree*)
           else if n1 = 0 && n2 = 0 then Term(n2, m2) (*remove 0 terms*)
           else if n1 = 0 then Term(n2, m2)
           else if n2 = 0 then Term(n2, m2)
-          else Plus([u;v])
+          else Plus([Plus([u;v]);Plus(tail)])
         )
         | _,_ -> Plus([u;v])
       )
@@ -184,8 +184,8 @@ let rec simplify1 (e:pExp): pExp =
       | x::y::p -> (
         let u, v = simplify1 x, simplify1 y in
         match u, v with
-        | Times(p2), _ -> (*flatten*) Printf.printf "flat1"; let f el = simplify1 el in simplify1 (Times(List.map f p2))
-        | _, Times(p2) -> (*flatten*) Printf.printf "flat2"; let f el = simplify1 el in simplify1 (Times(List.map f p2))
+        | Times(p2), _ -> (*flatten*) Printf.printf "flat1"; simplify1 (Times(List.map simplify1 p2))
+        | _, Times(p2) -> (*flatten*) Printf.printf "flat2"; simplify1 (Times(List.map simplify1 p2))
         | Term(n1, m1), Term(n2, m2) -> (
           let prod = Term(n1*n2, m1+m2) in
             if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
