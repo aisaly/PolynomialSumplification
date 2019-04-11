@@ -168,11 +168,11 @@ let rec simplify1 (e:pExp): pExp =
         | Plus(p2), _ -> (*flatten*) Plus((List.map simplify1 p2))
         | _, Plus(p2) -> (*flatten*) Plus((List.map simplify1 p2))
         | Term(n1, m1), Term(n2, m2) -> (
-          if m1 = m2 then Term(n1+n2, m1) (*add terms of like degree*)
-          else if n1 = 0 && n2 = 0 then Term(n2, m2) (*remove 0 terms*)
-          else if n1 = 0 then Term(n2, m2)
-          else if n2 = 0 then Term(n2, m2)
-          else Plus([Plus([u;v]);Plus(tail)])
+          let res = addTerms u v in
+          match res with
+          | Plus(_) -> let m = simplify1 (Plus(v::tail)) in Plus([u;m])
+          | Term(_,_) -> simplify1 Plus(res@tail)
+          | _ -> ()
         )
         | _,_ -> Plus([u;v])
       )
@@ -196,6 +196,17 @@ let rec simplify1 (e:pExp): pExp =
         | _, Plus(p2) -> (*distribute*) let f el = Times([el;e]) in Plus(List.map f p2)
       )
     )
+
+and addTerms (p1:pExp) (p2:pExp): pExp =
+    match p1, p2 with
+    | Term(n1, m1), Term(n2,n2) -> (
+      if m1 = m2 then Term(n1+n2, m1) (*add terms of like degree*)
+      else if n1 = 0 && n2 = 0 then Term(n2, m2) (*remove 0 terms*)
+      else if n1 = 0 then Term(n2, m2)
+      else if n2 = 0 then Term(n2, m2)
+      else  Plus([p1;p2])
+    )
+    | _,_ -> Plus([p1;p2])
 
 (*
   Compute if two pExp are the same
