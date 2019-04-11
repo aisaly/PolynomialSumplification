@@ -94,7 +94,7 @@ let compare (e1: pExp) (e2: pExp) : bool =
 let rec print_pExp (_e: pExp): unit =
   match _e with
   | Term(n,m) -> (
-    Printf.printf "Term:"; print_int n;
+    print_int n;
     if m > 0 then (
       print_string "x";
       if m >= 2 then Printf.printf "^%i" m
@@ -103,7 +103,7 @@ let rec print_pExp (_e: pExp): unit =
   | Plus(pList) -> (
     match pList with
     | hd::tail ->  (
-      Printf.printf "Plus("; print_pExp hd; Printf.printf " + ";
+      Printf.printf "("; print_pExp hd; Printf.printf " + ";
       print_pExp_list_plus tail; Printf.printf ")"
     )
     | [] -> ()
@@ -111,7 +111,7 @@ let rec print_pExp (_e: pExp): unit =
   | Times(pList) -> (
     match pList with
     | hd::tail ->  (
-      Printf.printf "Times("; print_pExp hd; Printf.printf " * ";
+      Printf.printf "("; print_pExp hd; Printf.printf " * ";
       print_pExp_list_times tail; Printf.printf ")"
     )
     | [] -> ()
@@ -212,7 +212,7 @@ and applyPlus (l:pExp list): pExp list =
           x::(applyPlus (y::tail))
         )
       )
-      |_,_ -> [simplify1 x; simplify1 y]
+      |_,_ -> [simplify1 x; simplify1 y]@tail
     )
 
 and applyTimes (l:pExp list): pExp list =
@@ -226,7 +226,7 @@ and applyTimes (l:pExp list): pExp list =
         if n1 = 0 || n2 = 0 then tail
         else Term(n1*n2, m1+m2)::tail
       )
-      |_,_ -> [simplify1 x; simplify1 y]
+      |_,_ -> [simplify1 x; simplify1 y]@tail
     )
 
 (*
@@ -257,7 +257,5 @@ let rec simplify (e:pExp): pExp =
     let rE = simplify1(e) in
       if (equal_pExp e rE) then
         (e)
-      else (
-        print_endline ""; print_pExp e; print_endline "";
+      else
         (simplify(rE))
-      )
