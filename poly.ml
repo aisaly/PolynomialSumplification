@@ -161,7 +161,21 @@ let rec simplify1 (e:pExp): pExp =
       let pp = (List.stable_sort compareDegree pList) in
       match pp with
       | [] -> raise (Failure "Plus: did not receive enough arguments")
-      | l -> Plus(simplifyPlusList l [])
+      | l::[] -> simplify1 l
+      | x::y::tail -> (
+        let u, v = simplify1 x, simplify1 y in
+        match u, v with
+        | Plus(p2), _ -> (*flatten*) let f el = simplify1 el in Plus(List.map f p2)
+        | _, Plus(p2) -> (*flatten*) let f el = simplify1 el in Plus(List.map f p2)
+        | Term(n1, m1), Term(n2, m2) -> (
+          if m1 = m2 then Term(n1+n2, m1) (*add terms of like degree*)
+          else if n1 = 0 && n2 = 0 then Term(n2, m2) (*remove 0 terms*)
+          else if n1 = 0 then Term(n2, m2)
+          else if n2 = 0 then Term(n2, m2)
+          else Plus([u;v])
+        )
+        | _,_ -> Plus([u;v])
+      )
     )
     | Times(pList) -> (
       match pList with
@@ -182,25 +196,6 @@ let rec simplify1 (e:pExp): pExp =
         | _, Plus(p2) -> (*distribute*) let f el = Times([el;e]) in Plus(List.map f p2)
       )
     )
-
-	and simplifyPlusList (l:pExp list) (l2:pExp list): pExp list =
-		match l with
-		| [] -> l2
-		| x::[] -> [simplify1 x]@l2
-		| x::y::tail -> (
-			let u, v = simplify1 x, simplify1 y in
-			match u, v with
-			| Plus(p2), _ -> simplifyPlusList ([u;v]@p2@tail) l2
-			| _, Plus(p2) -> simplifyPlusList ([u;v]@p2@tail) l2
-			| Term(n1, m1), Term(n2, m2) -> (
-			  if m1 = m2 then simplifyPlusList tail [Term(n1+n2, m1)]@l2 (*add terms of like degree*)
-			  else if n1 = 0 && n2 = 0 then simplifyPlusList tail l2 (*remove 0 terms*)
-			  else if n1 = 0 then simplifyPlusList tail [Term(n2, m2)]@l2
-			  else if n2 = 0 then simplifyPlusList tail [Term(n2, m2)]@l2
-        else simplifyPlusList (v::tail) (u::l2)
-			)
-			| _,_ -> [u;v]@l2
-		)
 
 (*
   Compute if two pExp are the same
