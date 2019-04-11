@@ -9,7 +9,7 @@ clean:
 	rm -rf tests/*.out
 
 main.byte:
-	ocamlbuild -use-menhir main.byte
+	ocamlbuild -use-menhir -use-ocamlfind -pkg 'core,ppx_jane' main.byte -tag thread
 
 tests/%.out: tests/%.in main.byte
 	./main.byte $< > $@

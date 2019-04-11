@@ -133,8 +133,21 @@ and print_pExp_list_times (ps:pExp list): unit =
 let distribute (p:pExp) (elem:pExp): pExp =
   Times([p; elem])
 
-let add_flatten (p:pExp) (elem:pExp): pExp =
-  Plus([p; elem])
+let rec flattenTimes (p:pExp list) (fin:pExp list): pExp list =
+  match p with
+  | [] -> fin
+  | hd::tail ->
+    match hd with
+    | Times(l) -> flattenTimes (l@tail) fin
+      | _ -> flattenTimes tail (hd::fin)
+
+let rec flattenPlus (p:pExp list) (fin:pExp list): pExp list =
+  match p with
+  | [] -> fin
+  | hd::tail ->
+    match hd with
+      | Plus(l) -> flattenPlus (l@tail) fin
+      | _ -> flattenPlus tail (hd::fin)
 
 (*
   Function to simplify (one pass) pExpr
@@ -158,55 +171,63 @@ let rec simplify1 (e:pExp): pExp =
     match e with
     | Term(n,m) -> e
     | Plus(pList) -> (
-      let pp = (List.stable_sort compareDegree pList) in
-      match pp with
+      (*let pp = (List.stable_sort compareDegree pList) in*)
+      match pList with
       | [] -> raise (Failure "Plus: did not receive enough arguments")
-      | l::[] -> simplify1 l
-      | x::y::tail -> (
-        let u, v = simplify1 x, simplify1 y in
-        match u, v with
-        | Plus(p2), _ -> (*flatten*) Plus((List.map simplify1 p2))
-        | _, Plus(p2) -> (*flatten*) Plus((List.map simplify1 p2))
-        | Term(n1, m1), Term(n2, m2) -> (
-          let res = addTerms u v in
-          match res with
-          | Plus(_) -> let m = simplify1 (Plus(v::tail)) in Plus([u;m])
-          | Term(_,_) -> simplify1 Plus(res@tail)
-          | _ -> ()
-        )
-        | _,_ -> Plus([u;v])
+      | x::[] -> simplify1 x
+      | l -> (
+        flattenPlus l [] |>
+        List.stable_sort compareDegree |>
+        List.map simplify1 |>
+        applyPlus|>
+        Plus
       )
     )
     | Times(pList) -> (
       match pList with
       | [] -> raise (Failure "Times: did not receive enough arguments")
       | x::[] -> simplify1 x
-      | x::y::p -> (
-        let u, v = simplify1 x, simplify1 y in
-        match u, v with
-        | Times(p2), _ -> (*flatten*) Printf.printf "flat1"; simplify1 (Times(List.map simplify1 p2))
-        | _, Times(p2) -> (*flatten*) Printf.printf "flat2"; simplify1 (Times(List.map simplify1 p2))
-        | Term(n1, m1), Term(n2, m2) -> (
-          let prod = Term(n1*n2, m1+m2) in
-            if n1 = 0 then Term(n2, m2) (*remove 0 terms*)
-            else if n2 = 0 then Term(n1, m1)
-            else (print_pExp prod; prod)
-        )
-        | Plus(p2), _ -> (*distribute*) let f el = Times([el;e]) in Plus(List.map f p2)
-        | _, Plus(p2) -> (*distribute*) let f el = Times([el;e]) in Plus(List.map f p2)
+      | l -> (
+        flattenTimes l [] |>
+        List.map simplify1 |>
+        applyTimes |>
+        (* distribute |> *)
+        Times
       )
     )
 
-and addTerms (p1:pExp) (p2:pExp): pExp =
-    match p1, p2 with
-    | Term(n1, m1), Term(n2,n2) -> (
-      if m1 = m2 then Term(n1+n2, m1) (*add terms of like degree*)
-      else if n1 = 0 && n2 = 0 then Term(n2, m2) (*remove 0 terms*)
-      else if n1 = 0 then Term(n2, m2)
-      else if n2 = 0 then Term(n2, m2)
-      else  Plus([p1;p2])
+and applyPlus (l:pExp list): pExp list =
+    match l with
+    | [] -> []
+    | x::[] -> [x]
+    | x::y::tail -> (
+      (*try to add x and y*)
+      match x, y with
+      | Term(n1, m1), Term(n2, m2) -> (
+        if m1 = m2 then Term(n1+n2, m1)::tail (*add terms of like degree*)
+        else if n1 = 0 && n2 = 0 then Term(n2, m2)::tail (*remove 0 terms*)
+        else if n1 = 0 then Term(n2, m2)::tail
+        else if n2 = 0 then Term(n2, m2)::tail
+        else (*can't add x and y, try tail*) (
+          x::(applyPlus (y::tail))
+        )
+      )
+      |_,_ -> [simplify1 x; simplify1 y]
     )
-    | _,_ -> Plus([p1;p2])
+
+and applyTimes (l:pExp list): pExp list =
+    match l with
+    | [] -> []
+    | x::[] -> [x]
+    | x::y::tail -> (
+      (*multiply x and y*)
+      match x, y with
+      | Term(n1, m1), Term(n2, m2) -> (
+        if n1 = 0 || n2 = 0 then tail
+        else Term(n1*n2, m1+m2)::tail
+      )
+      |_,_ -> [simplify1 x; simplify1 y]
+    )
 
 (*
   Compute if two pExp are the same
@@ -223,10 +244,10 @@ let equal_pExp (_e1: pExp) (_e2: pExp): bool =
   	else false
   )
   | Times(l1), Times(l2) -> (
-    if l1 = l2 then (Printf.printf "tines equal"; true)
-  	else (Printf.printf "times not equal"; false)
+    if l1 = l2 then true
+  	else false
   )
-  | _ -> Printf.printf "not equal types"; false
+  | _ -> false
 
 (* Fixed point version of simplify1
   i.e. Apply simplify1 until no
@@ -234,8 +255,9 @@ let equal_pExp (_e1: pExp) (_e2: pExp): bool =
 *)
 let rec simplify (e:pExp): pExp =
     let rE = simplify1(e) in
-	print_endline ""; print_pExp e; print_endline "";
       if (equal_pExp e rE) then
         (e)
-      else
+      else (
+        print_endline ""; print_pExp e; print_endline "";
         (simplify(rE))
+      )
