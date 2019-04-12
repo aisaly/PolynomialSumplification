@@ -149,6 +149,17 @@ let rec flattenPlus (p:pExp list) (fin:pExp list): pExp list =
       | Plus(l) -> flattenPlus (l@tail) fin
       | _ -> flattenPlus tail (hd::fin)
 
+let rec distributer (p:pExp list) (fin:pExp list): pExp list =
+  match p with
+  | [] -> fin
+  | hd::tail ->
+    match hd with
+      | Plus(l) -> (
+        let f el = distribute (List.hd tail) el in
+         (Plus((List.map f l)))::fin
+      )
+      | _ -> distributer tail (hd::fin)
+
 (*
   Function to simplify (one pass) pExpr
 
@@ -188,10 +199,10 @@ let rec simplify1 (e:pExp): pExp =
       | [] -> raise (Failure "Times: did not receive enough arguments")
       | x::[] -> simplify1 x
       | l -> (
-        flattenTimes l [] |>
+        let ll = flattenTimes l [] in
+        distributer ll [] |>
         List.map simplify1 |>
         applyTimes |>
-        (* distribute |> *)
         Times
       )
     )
