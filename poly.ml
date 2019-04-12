@@ -94,8 +94,10 @@ let compare (e1: pExp) (e2: pExp) : bool =
 let rec print_pExp (_e: pExp): unit =
   match _e with
   | Term(n,m) -> (
-    print_int n;
-    if m > 0 then (
+    if m = 0 then print_int n
+    else if m > 0 then (
+      if n > 1 then print_int n
+      else print_string "";
       print_string "x";
       if m >= 2 then Printf.printf "^%i" m
     )
@@ -216,9 +218,9 @@ and applyPlus (l:pExp list): pExp list =
       match x, y with
       | Term(n1, m1), Term(n2, m2) -> (
         if m1 = m2 then Term(n1+n2, m1)::tail (*add terms of like degree*)
-        else if n1 = 0 && n2 = 0 then Term(n2, m2)::tail (*remove 0 terms*)
+        else if n1 = 0 && n2 = 0 then tail (*remove 0 terms*)
         else if n1 = 0 then Term(n2, m2)::tail
-        else if n2 = 0 then Term(n2, m2)::tail
+        else if n2 = 0 then Term(n1, m1)::tail
         else (*can't add x and y, try tail*) (
           x::(applyPlus (y::tail))
         )
